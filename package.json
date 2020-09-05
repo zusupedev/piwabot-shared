@@ -1,0 +1,22 @@
+{
+  "name": "piwabot-shared",
+  "version": "1.0.0",
+  "description": "Several components shared by Piwabot's microservices",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zusupedev/piwabot-shared.git"
+  },
+  "author": "Jiniux",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/zusupedev/piwabot-shared/issues"
+  },
+  "homepage": "https://github.com/zusupedev/piwabot-shared#readme",
+  "dependencies": {
+    "amqplib": "^0.6.0"
+  }
+}
