@@ -78,7 +78,7 @@ class Consumer extends Channel {
 
     async connect() {
         await super.connect()
-        this._chan.consume(this.queue, (msg) => {
+        this._chan.consume(this.queue, async (msg) => {
             try {
                 const obj = JSON.parse(msg.content.toString('utf-8'))
                 await this.onMessage(obj)
