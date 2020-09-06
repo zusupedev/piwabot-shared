@@ -18,10 +18,6 @@ class Channel {
     }
 
     constructor(queue, debug = false) {
-        if (conn) {
-            throw new Error('Invalid channel type.')
-        }
-
         this.queue = queue
         this.debug = debug
     }
