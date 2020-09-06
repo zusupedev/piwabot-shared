@@ -47,7 +47,7 @@ class Channel {
                 this._log(err, true);
                 this._chan && this._chan.close()
 
-                wait(ReconnectTimeout).then(tryConnect)
+                wait(ReconnectTimeout).then(() => tryConnect(resolve, _))
             }
         }
 
