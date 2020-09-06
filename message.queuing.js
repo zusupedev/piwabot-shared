@@ -1,6 +1,4 @@
 const amqplib = require('amqplib')
-
-const MQHostname = 'localhost'
 const ReconnectTimeout = 2000
 
 const wait = (ms) => new Promise((resolve, _) => setTimeout(resolve, ms))
@@ -28,7 +26,7 @@ class Channel {
 
     async _tryConnect(resolve, _) {
         try {
-            this._conn = await amqplib.connect(`amqp://${MQHostname}`)
+            this._conn = await amqplib.connect(`amqp://${RabbitMQServerHostname}`)
 
             this._conn.on('error', err => this._log(err, true))
             this._conn.on('close', this.connect)
