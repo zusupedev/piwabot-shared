@@ -86,7 +86,6 @@ class Consumer extends Channel {
     }
 
     async connected() {
-        this._log(new Error().stack)
         this._log('[AMQP] Begin Consume')
         this._chan.consume(this.queue, async (msg) => {
             try {
