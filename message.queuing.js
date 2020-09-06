@@ -64,6 +64,8 @@ class Consumer extends Channel {
      */
     constructor(queue, onMessage, debug = false) {
         super(queue, debug)
+        
+        this._log = super._log.bind(this) 
 
         this.onMessage = onMessage
     }
@@ -74,6 +76,7 @@ class Consumer extends Channel {
 
     async connect() {
         await super.connect()
+        
         this._chan.consume(this.queue, async (msg) => {
             try {
                 const obj = JSON.parse(msg.content.toString('utf-8'))
@@ -93,6 +96,8 @@ class Consumer extends Channel {
 class Producer extends Channel {
     constructor(queue, debug = false) {
         super(queue, true)
+
+        this._log = super._log.bind(this) 
     }
 
     async _createChannel() {
