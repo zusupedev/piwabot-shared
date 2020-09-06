@@ -27,25 +27,17 @@ class Channel {
 
     async connected() { }
 
-    async _tryConnect(resolve, _) {
+    async _spawnChannel() {
         try {
-            this._conn = await amqplib.connect(`amqp://${RabbitMQServerHostname}`)
-
-            this._conn.on('error', err => this._log(err, true))
-            this._conn.on('close', () => this.connect())
-
             this._chan = await this._createChannel()
 
             await this._chan.assertQueue(this.queue)
             this._chan.on('close', () => { this._chan = null })
 
             await this.connected()
-            resolve(this)
         } catch (err) {
             this._log(err, true);
             this._chan && this._chan.close()
-
-            wait(ReconnectTimeout).then(() => this._tryConnect(resolve, _))
         }
     }
 
@@ -53,8 +45,18 @@ class Channel {
     /**
      * @returns {Promise<Channel>}
      */
-    connect() {
-        return new Promise(this._tryConnect.bind(this))
+    async connect() {
+        try {
+            this._conn = await amqplib.connect(`amqp://${RabbitMQServerHostname}`)
+        } catch (err) {
+            this._log(err)
+            this.connect(); return
+        }
+
+        this._conn.on('error', err => this._log(err, true))
+        this._conn.on('close', () => this.connect())
+
+        return await this._spawnChannel()
     }
 }
 
