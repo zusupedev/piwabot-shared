@@ -25,6 +25,8 @@ class Channel {
         throw new Error('Not implemented.')
     }
 
+    async connected() { }
+
     async _tryConnect(resolve, _) {
         try {
             this._conn = await amqplib.connect(`amqp://${RabbitMQServerHostname}`)
@@ -37,6 +39,7 @@ class Channel {
             await this._chan.assertQueue(this.queue)
             this._chan.on('close', () => { this._chan = null })
 
+            await this.connected()
             resolve(this)
         } catch (err) {
             this._log(err, true);
@@ -72,21 +75,20 @@ class Consumer extends Channel {
         return await this._conn.createChannel()
     }
 
-    async connect() {
-        await super.connect()
+    async connected() {
+        this._log('[AMQP] Begin Consume')
         this._chan.consume(this.queue, async (msg) => {
             try {
                 const obj = JSON.parse(msg.content.toString('utf-8'))
                 await this.onMessage(obj)
 
+                this._log('[AMQP] Consumed')
                 this._chan.ack(msg)
             } catch (err) {
                 console.log(err)
                 this._chan.reject(msg, true)
             }
         }).catch(err => this._log(err, true))
-
-        return this
     }
 }
 
@@ -111,6 +113,7 @@ class Producer extends Channel {
     }
 
     async publish(msg) {
+        this._log('[AMQP] Publish')
         this._offlineQueue.push(msg)
 
         if (!this._chan) return;
@@ -120,6 +123,7 @@ class Producer extends Channel {
 
             try { 
                 await this._tryPublish(msg)
+                this._log('[AMQP] Published')
             } catch (err) {
                 this._log(err, true)
                 this._chan.close()
