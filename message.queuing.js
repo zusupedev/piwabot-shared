@@ -1,4 +1,5 @@
 const amqplib = require('amqplib')
+const { RabbitMQServerHostname } = require('./index')
 const ReconnectTimeout = 2000
 
 const wait = (ms) => new Promise((resolve, _) => setTimeout(resolve, ms))
