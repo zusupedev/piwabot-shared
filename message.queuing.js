@@ -81,7 +81,7 @@ class Consumer extends Channel {
 
                 this._chan.ack(msg)
             } catch (err) {
-                this._log(err, true)
+                console.log(err)
                 this._chan.reject(msg, true)
             }
         }).catch(err => this._log(err, true))
