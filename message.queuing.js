@@ -50,12 +50,14 @@ class Channel {
             this._conn = await amqplib.connect(`amqp://${RabbitMQServerHostname}`)
         } catch (err) {
             this._log(err)
-            this.connect(); return
+            await wait(ReconnectTimeout).then(() => { this.connect() });
+            
+            return
         }
 
         this._conn.on('error', err => this._log(err, true))
         this._conn.on('close', () => this.connect())
-
+        
         return await this._spawnChannel()
     }
 }
