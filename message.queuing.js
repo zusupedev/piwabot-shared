@@ -30,7 +30,7 @@ class Channel {
             this._conn = await amqplib.connect(`amqp://${RabbitMQServerHostname}`)
 
             this._conn.on('error', err => this._log(err, true))
-            this._conn.on('close', this.connect)
+            this._conn.on('close', () => this.connect())
 
             this._chan = await this._createChannel()
 
