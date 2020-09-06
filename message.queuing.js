@@ -1,112 +1,136 @@
 const amqplib = require('amqplib')
-const { RabbitMQServerHostname } = require('./index')
 
-/**
- * @param {string} queue Queue's identifier
- * @returns {Promise<import('amqplib').Channel>}
- */
-const createChannel = (queue) => new Promise ((resolve, reject) => {
-    amqplib.connect(`amqp://${RabbitMQServerHostname}`)
-        .then(connection => connection.createChannel())
-        .then(channel => {
-            channel.assertQueue(queue); resolve(channel) 
-        }).catch(reject)
-})
+const MQHostname = 'piwabot-rabbitmq'
+const ReconnectTimeout = 2000
 
-const wait = (ms) => new Promise((rs, _) => setTimeout(rs, ms))  
+const wait = (ms) => new Promise((resolve, _) => setTimeout(resolve, ms))
 
-class Producer {
+class Channel {
     /**
-     * @type {import('amqplib').Channel}
-     * @private
+     * @type {import('amqplib').ConfirmChannel | import('amqplib').Channel}
      */
-    _channel
-    
-    _running = false
+    _chan = null
 
-    constructor(queue) {
+    _log(info, error = false) {
+        this.debug && (
+            console[!error ? 'log' : 'error'](info)
+        )
+    }
+
+    constructor(queue, debug = false) {
+        if (conn) {
+            throw new Error('Invalid channel type.')
+        }
+
         this.queue = queue
+        this.debug = debug
     }
 
-    async connect() {
-        try {
-            this._channel = await createChannel(this.queue);
+    async _createChannel() {
+        throw new Error('Not implemented.')
+    }
+
+    /**
+     * @returns {Promise<Channel>}
+     */
+    connect() {
+        const tryConnect = async (resolve, _) => {
+            try {
+                this._conn = await amqplib.connect(`amqp://${MQHostname}`)
+
+                this._conn.on('error', err => this._log(err, true))
+                this._conn.on('close', this.connect)
+
+                this._chan = await this._createChannel()
+
+                await this._chan.assertQueue(this.queue)
+                this._chan.on('close', () => { this._chan = null })
+
+                resolve(this)
+            } catch (err) {
+                this._log(err, true);
+                this._chan && this._chan.close()
+
+                wait(ReconnectTimeout).then(tryConnect)
+            }
         }
-        catch (e) {
-            console.error(e); setTimeout(() => this.connect(), 2000) 
-        }
-    }
 
-    publish(obj) {
-        const buffer = Buffer.from(JSON.stringify(obj), 'utf-8')
-        this._channel.sendToQueue(this.queue, buffer)
-    }
-
-    async destroy() {
-        this._running = false
-        await this._channel.close()
+        return new Promise(tryConnect)
     }
 }
 
-class Consumer {
+class Consumer extends Channel {
     /**
-     * @type {import('amqplib').Channel}
-     * @private
+     * Create a consumer channel
+     * @param {string} queue 
+     * @param {(obj) => Promise<void>} onMessage 
+     * @param {boolean} debug 
      */
-    _channel
-    
-    _running = false
+    constructor(queue, onMessage, debug = false) {
+        super(queue, debug)
 
-    /**
-     * @param {string} queue Queue's identifier 
-     * @param {(any) => Promise<void>} onMessage Callback invoked when a message is received.
-     */
-    constructor(queue, onMessage) {
         this.onMessage = onMessage
-        this.queue = queue
     }
 
-    _fetchMessage() {
-        if (!this._running) return;
+    async _createChannel() {
+        return await this._conn.createChannel()
+    }
 
-        this._channel.consume(this.queue, async (msg) => {
-            const obj = JSON.parse(msg.content.toString('utf-8'))
-
+    async connect() {
+        await super.connect()
+        this._chan.consume(this.queue, (msg) => {
             try {
+                const obj = JSON.parse(msg.content.toString('utf-8'))
                 await this.onMessage(obj)
-                this._channel.ack(msg)
-            } catch (e) {
-                console.log(e)
-                this._channel.reject(msg, true)
+
+                this._chan.ack(msg)
+            } catch (err) {
+                this._log(err, true)
+                this._chan.reject(msg, true)
             }
-            
-        }, { noAck: false }).catch((e) => {
-            if (this._running) {
-                console.error(e); this.connect();
-            }
+        }).catch(err => this._log(err, true))
+
+        return this
+    }
+}
+
+class Producer extends Channel {
+    constructor(queue, debug = false) {
+        super(this.queue, true)
+    }
+
+    async _createChannel() {
+        return await this._conn.createConfirmChannel()
+    }
+
+    _offlineQueue = []
+
+    _tryPublish(msg) {
+        return new Promise((resolve, reject) => {
+            const json = Buffer.from(JSON.stringify(msg), 'utf-8')
+            this._chan.publish('', this.queue, json, {}, (err, _) => {
+                err ? reject(err) : resolve()
+            })
         })
     }
-    
-    async connect() {
-        while (true) {
-            try {
-                this._channel = await createChannel(this.queue);
-                
-                this._running = true
-                this._fetchMessage()
 
-                return this
-            }
-            catch (e) {
-                console.error(e); await wait(2000)
-            }
+    publish(msg) {
+        this._offlineQueue.push(msg)
+
+        if (!this._chan) return;
+
+        while (this._offlineQueue.length > 0) {
+            const msg = this._offlineQueue.pop()
+
+            try { 
+                await this._tryPublish(msg)
+            } catch (err) {
+                this._log(err, true)
+                this._chan.close()
+                
+                this._offlineQueue.push(msg)
+                break
+            }  
         }
     }
-
-    async destroy() {
-        this._running = false
-        await this._channel.close()
-    }
 }
-
-module.exports = {Consumer, Producer}
