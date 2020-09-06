@@ -96,7 +96,7 @@ class Consumer extends Channel {
 
 class Producer extends Channel {
     constructor(queue, debug = false) {
-        super(this.queue, true)
+        super(queue, true)
     }
 
     async _createChannel() {
