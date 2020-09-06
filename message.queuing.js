@@ -134,3 +134,5 @@ class Producer extends Channel {
         }
     }
 }
+
+module.exports = { Consumer, Producer }
