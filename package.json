@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/zusupedev/piwabot-shared#readme",
   "dependencies": {
+    "@types/amqplib": "^0.5.13",
     "amqplib": "^0.6.0"
   }
 }
