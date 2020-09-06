@@ -9,6 +9,7 @@ class Channel {
      * @type {import('amqplib').ConfirmChannel | import('amqplib').Channel}
      */
     _chan = null
+    _conn = null
 
     _log(info, error = false) {
         this.debug && (
@@ -41,7 +42,6 @@ class Channel {
         }
     }
 
-
     /**
      * @returns {Promise<Channel>}
      */
@@ -56,7 +56,13 @@ class Channel {
         }
 
         this._conn.on('error', err => this._log(err, true))
-        this._conn.on('close', () => this.connect())
+        this._conn.on('close', () => {
+            if (this._conn) {
+                this.connect()
+            }
+
+            this._conn = null
+        })
         
         return await this._spawnChannel()
     }
