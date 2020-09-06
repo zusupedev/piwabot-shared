@@ -114,7 +114,7 @@ class Producer extends Channel {
         })
     }
 
-    publish(msg) {
+    async publish(msg) {
         this._offlineQueue.push(msg)
 
         if (!this._chan) return;
