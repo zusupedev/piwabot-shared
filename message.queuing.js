@@ -87,6 +87,8 @@ class Consumer extends Channel {
 
     async connected() {
         this._log('[AMQP] Begin Consume')
+        this._chan.prefetch(1)       
+
         this._chan.consume(this.queue, async (msg) => {
             try {
                 const obj = JSON.parse(msg.content.toString('utf-8'))
@@ -95,7 +97,7 @@ class Consumer extends Channel {
                 this._log('[AMQP] Consumed')
                 this._chan.ack(msg)
             } catch (err) {
-                console.log(err)
+                this._log(err)
                 this._chan.reject(msg, true)
             }
         }).catch(err => this._log(err, true))
@@ -104,7 +106,7 @@ class Consumer extends Channel {
 
 class Producer extends Channel {
     constructor(queue, debug = false) {
-        super(queue, true)
+        super(queue, debug)
     }
 
     async _createChannel() {
