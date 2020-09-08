@@ -1,3 +1,4 @@
-const RabbitMQServerHostname = 'piwabot-rabbitmq'
-
-module.exports = { RabbitMQServerHostname }
+module.exports = {
+    RabbitMQServerHostname : 'piwabot-rabbitmq',
+    MysqlServerHostname : 'piwabot-database'
+}
