@@ -5,9 +5,9 @@ class Database {
     constructor(user, password, database) {
         this._pool = mysql.createPool({
             host:     MysqlServerHostname,
-            user:     user     | process.argv['MYSQL_USER'],
-            password: password | process.argv['MYSQL_PASSWORD'],
-            database: database | process.argv['MYSQL_DATABASE']
+            user:     user     ,
+            password: password ,
+            database: database 
         })
     }
 
