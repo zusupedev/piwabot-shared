@@ -2,12 +2,12 @@ const mysql = require('mysql')
 const { MysqlServerHostname } = require('./index')
 
 class Database {
-    constructor() {
+    constructor(user, password, database) {
         this._pool = mysql.createPool({
             host:     MysqlServerHostname,
-            user:     process.env['MYSQL_USER'],
-            password: process.env['MYSQL_PASSWORD'],
-            database: process.env['MYSQL_DATABASE']
+            user:     user     | process.argv['MYSQL_USER'],
+            password: password | process.argv['MYSQL_PASSWORD'],
+            database: database | process.argv['MYSQL_DATABASE']
         })
     }
 
@@ -24,3 +24,5 @@ class Database {
         return (await this.query(format, args))[0]
     }
 }
+
+module.exports = { Database }
