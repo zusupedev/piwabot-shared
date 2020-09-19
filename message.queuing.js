@@ -1,4 +1,6 @@
 const amqplib = require('amqplib')
+const JSON = require('json-bigint')
+
 const { RabbitMQServerHostname } = require('./index')
 const ReconnectTimeout = 2000
 
