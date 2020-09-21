@@ -3,6 +3,7 @@ const JSON = require('json-bigint')
 
 const { RabbitMQServerHostname } = require('./index')
 const ReconnectTimeout = 2000
+const RequeueTimeout = 1000;
 
 const wait = (ms) => new Promise((resolve, _) => setTimeout(resolve, ms))
 
@@ -98,9 +99,12 @@ class Consumer extends Channel {
 
                 this._log('[AMQP] Consumed')
                 this._chan.ack(msg)
-            } catch (err) {
+            } catch (obj) {
+                var time = obj.timeout | RequeueTimeout
+                var err = obj.code | obj
+
                 this._log(err)
-                this._chan.reject(msg, true)
+                setTimeout(() => this._chan.reject(msg, true), time)
             }
         }).catch(err => this._log(err, true))
     }
@@ -112,7 +116,10 @@ class Producer extends Channel {
     }
 
     async _createChannel() {
-        return await this._conn.createConfirmChannel()
+        const channel = await this._conn.createConfirmChannel()
+        this.publish()
+
+        return channel
     }
 
     async connected() { }
