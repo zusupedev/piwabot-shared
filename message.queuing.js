@@ -117,7 +117,7 @@ class Producer extends Channel {
 
     async _createChannel() {
         const channel = await this._conn.createConfirmChannel()
-        this.publish()
+        await this.publish()
 
         return channel
     }
