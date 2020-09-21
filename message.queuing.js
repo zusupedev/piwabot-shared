@@ -129,8 +129,10 @@ class Producer extends Channel {
     }
 
     async publish(msg) {
-        this._log('[AMQP] Publish')
-        this._offlineQueue.push(msg)
+        if (msg) {
+            this._log('[AMQP] Publish')
+            this._offlineQueue.push(msg)
+        }
 
         if (!this._chan) return;
 
