@@ -1,3 +1,5 @@
+const mysql = require('mysql')
+
 module.exports = mysql.createPool({
     host: 'piwabot-mysql',
     user: process.env['MYSQL_USER'],
